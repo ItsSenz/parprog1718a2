@@ -26,7 +26,7 @@ message globalBuffer[MESSAGES];
 int global_availmsg = 0;																							
 
 pthread_cond_t msg_in = PTHREAD_COND_INITIALIZER;					
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t msg_out = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
