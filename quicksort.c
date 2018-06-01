@@ -96,7 +96,7 @@ void *pd_thread(void *args) {
        }
 																															
        globalBuffer[i].st = i;
-       printf("Producer: sending msg %d\n",globalBuffer[i].st);
+       printf("Pd: sends msg %d\n",globalBuffer[i].st);
        global_availmsg = 1;
 		
 																															
@@ -113,7 +113,7 @@ void *cm_thread(void *args) {
 	while (global_availmsg<1) {
           pthread_cond_wait(&msg_in,&mutex); 
 	}
-	printf("Consumer: received msg %d\n",globalBuffer[i]);
+	printf("Cm: receives msg %d\n",globalBuffer[i]);
 	global_availmsg = 0;
 	pthread_cond_signal(&msg_out);
 	pthread_mutex_unlock(&mutex);
