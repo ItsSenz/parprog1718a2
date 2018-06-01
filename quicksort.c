@@ -1,12 +1,35 @@
+// simple quicksort implementation
+// compile with: gcc -O2 -Wall quicksort.c -o quicksort
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <time.h>
 
 #define N 1000000
 #define CUTOFF 10
+#define THREADS 4
 #define LIMIT 50000
 
-//inssort
+
+
+
+struct message{					
+	int st;
+	int fns;
+	};
+typedef struct message message; 
+
+
+
+message globalBuffer[MESSAGES];																							
+int global_availmsg = 0;																							
+
+pthread_cond_t msg_in = PTHREAD_COND_INITIALIZER;					
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+
 void inssort(double *a,int n) {
 int i,j;
 double t;
@@ -46,9 +69,9 @@ int partition(double *a, int n) {
   return i;
 }
 
-int quicksort(double *a,int n) {
+
+void quicksort(double *a,int n) {
 int i;
-int sorted = 0;
 
   // check if below cutoff limit
   if (n<=CUTOFF) {
@@ -60,17 +83,49 @@ int sorted = 0;
 
   // recursively sort halves
   quicksort(a,i);
-  sorted = quicksort(a+i,n-i);
+  quicksort(a+i,n-i);
+  
 }
- 
- 
-
-
+void *pd_thread(void *args) {	
+   int i;
+   message Message;
+   for (i=0;i<MESSAGES;i++) {
+       pthread_mutex_lock(&mutex);
+       while (global_availmsg>0) {																							
+	   pthread_cond_wait(&msg_out,&mutex);
+       }
+																															
+       globalBuffer[i].st = i;
+       printf("Producer: sending msg %d\n",globalBuffer[i].st);
+       global_availmsg = 1;
+		
+																															
+       pthread_cond_signal(&msg_in);
+       pthread_mutex_unlock(&mutex);
+       }
+	
+       pthread_exit(NULL); 
+}
+void *cm_thread(void *args) {
+    int i;
+    for (i=0;i<MESSAGES;i++) {
+	pthread_mutex_lock(&mutex);
+	while (global_availmsg<1) {
+          pthread_cond_wait(&msg_in,&mutex); 
+	}
+	printf("Consumer: received msg %d\n",globalBuffer[i]);
+	global_availmsg = 0;
+	pthread_cond_signal(&msg_out);
+	pthread_mutex_unlock(&mutex);
+    }
+    pthread_exit(NULL); 
+}
 
 int main() {
   double *a;
   int i;
-  
+  struct thread_params tp;
+  pthread_t tid;
   
   
   a = (double *)malloc(N*sizeof(double));
@@ -86,7 +141,11 @@ int main() {
   }
 
   
-  
+  // simple quicksort
+  if(pthread_create(&tid, NULL, work, &tp) != 0) {
+    printf("Error in thread creation\n");
+    exit(1);
+  }
 
   
   
@@ -100,10 +159,9 @@ int main() {
   }  
 
   free(a);
+  pthread_mutex_destroy(&mutex);
+  pthread_cond_destroy(&msg_out);
+  pthread_cond_destroy(&msg_in);
   
   return 0;
 }
-}
-// με pthreads και thread pool...
-
-
